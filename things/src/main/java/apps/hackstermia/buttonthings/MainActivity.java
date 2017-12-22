@@ -6,6 +6,10 @@ import android.os.Bundle;
 import java.io.IOException;
 
 import android.util.Log;
+import android.view.KeyEvent;
+
+import com.google.android.things.contrib.driver.button.Button;
+import com.google.android.things.contrib.driver.button.ButtonInputDriver;
 import com.google.android.things.pio.Gpio;
 import com.google.android.things.pio.PeripheralManagerService;
 
@@ -13,6 +17,7 @@ public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private Gpio mLedGpio;
+    private ButtonInputDriver mButtonInputDriver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +30,13 @@ public class MainActivity extends Activity {
             mLedGpio = pioService.openGpio(BoardDefaults.getGPIOForLED());
             mLedGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
 
+            Log.i(TAG, "Registering button driver");
+            // Initialize and register the InputDriver that will emit SPACE key events
+            // on GPIO state changes.
+            mButtonInputDriver = new ButtonInputDriver(
+                    BoardDefaults.getGPIOForButton(),
+                    Button.LogicState.PRESSED_WHEN_LOW,
+                    KeyEvent.KEYCODE_SPACE);
         } catch (IOException e) {
             Log.e(TAG, "Error configuring GPIO pins", e);
         }
@@ -33,30 +45,29 @@ public class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-
-        Runnable ledBlinker = new Runnable() {
-            @Override
-            public void run() {
-                while(true) {
-                    // Turn on the LED
-                    setLedValue(true);
-                    sleep(3000);
-
-                    // Turn off the LED
-                    setLedValue(false);
-                    sleep(3000);
-                }
-            }
-        };
-        new Thread(ledBlinker).start();
+        mButtonInputDriver.register();
     }
 
-    private void sleep(int milliseconds){
-        try {
-            Thread.sleep(milliseconds);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_SPACE) {
+            // Turn on the LED
+            setLedValue(true);
+            return true;
         }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_SPACE) {
+            // Turn off the LED
+            setLedValue(false);
+            return true;
+        }
+
+        return super.onKeyUp(keyCode, event);
     }
 
     /**
@@ -73,6 +84,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy(){
         super.onDestroy();
+
+        if (mButtonInputDriver != null) {
+            mButtonInputDriver.unregister();
+            try {
+                mButtonInputDriver.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Error closing Button driver", e);
+            } finally{
+                mButtonInputDriver = null;
+            }
+        }
 
         if (mLedGpio != null) {
             try {
