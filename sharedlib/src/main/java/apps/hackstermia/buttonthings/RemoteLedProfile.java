@@ -5,7 +5,6 @@ import android.bluetooth.BluetoothGattService;
 
 import java.util.UUID;
 
-
 public class RemoteLedProfile {
 
     /* Remote LED Service UUID */

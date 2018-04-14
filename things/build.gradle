@@ -29,4 +29,5 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
     compileOnly 'com.google.android.things:androidthings:0.7-devpreview'
     compile 'com.google.android.things.contrib:driver-button:0.6'
+    implementation project(':sharedlib')
 }
