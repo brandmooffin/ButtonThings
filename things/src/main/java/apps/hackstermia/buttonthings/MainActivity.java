@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import android.util.Log;
 import com.google.android.things.pio.Gpio;
-import com.google.android.things.pio.PeripheralManagerService;
+import com.google.android.things.pio.PeripheralManager;
 
 public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -19,10 +19,9 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "Starting ButtonActivity");
 
-        PeripheralManagerService pioService = new PeripheralManagerService();
         try {
             Log.i(TAG, "Configuring GPIO pins");
-            mLedGpio = pioService.openGpio(BoardDefaults.getGPIOForLED());
+            mLedGpio = PeripheralManager.getInstance().openGpio(BoardDefaults.getGPIOForLED());
             mLedGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
 
         } catch (IOException e) {
